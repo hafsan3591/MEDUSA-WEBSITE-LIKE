@@ -1,7 +1,7 @@
-Flask[async]
+Flask==3.0.3
 requests
 aiohttp
 googleapis-common-protos
 pycryptodome
-protobuf
-Werkzeug
+protobuf==4.25.1
+WerkzeugWerkzeug
