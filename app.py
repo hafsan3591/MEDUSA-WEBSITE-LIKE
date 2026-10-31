@@ -14,7 +14,7 @@ from google.protobuf.message import DecodeError
 from collections import OrderedDict
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "medusa-hacker-terminal-secret-2024-x9k")
+app.secret_key = os.environ.get("SECRET_KEY", "medusa-premium-secret-2024-x9k")
 
 # 🔐 Access Passwords
 ACCESS_PASSWORD = "HK-385-HK"
@@ -152,131 +152,559 @@ def make_request(encrypted_uid, region, token):
         return None
 
 
-# ================= SHARED STYLES =================
+# ================= PREMIUM STYLES =================
 BASE_CSS = """
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-:root{
-  --g:#00ff41; --gd:#00b32c; --dd:#003b0f; --red:#ff0040;
-  --bg:#000; --panel:#041a08;
-}
-html,body{
-  min-height:100%;
-  background:var(--bg);
-  color:var(--g);
-  font-family:'Courier New',Consolas,monospace;
-  overflow-x:hidden;
-}
-body{
-  min-height:100vh; position:relative; padding:24px 16px 60px;
-}
-/* scanlines + vignette */
-body::before{
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:9998;
-  background:repeating-linear-gradient(0deg,transparent,transparent 2px,
-             rgba(0,255,65,.03) 2px,rgba(0,255,65,.03) 4px);
-  animation:scan 10s linear infinite;
-}
-@keyframes scan{ from{background-position:0 0} to{background-position:0 200px} }
-body::after{
-  content:''; position:fixed; inset:0; pointer-events:none; z-index:9997;
-  background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.75) 100%);
-}
-.glow{ text-shadow:0 0 6px var(--g),0 0 14px var(--gd); }
-.wrap{ max-width:760px; margin:0 auto; position:relative; z-index:2; }
-.card{
-  background:linear-gradient(180deg, rgba(0,30,10,.65), rgba(0,10,3,.9));
-  border:1px solid rgba(0,255,65,.35);
-  border-radius:14px;
-  padding:28px 24px;
-  box-shadow:0 0 24px rgba(0,255,65,.15), inset 0 0 24px rgba(0,255,65,.05);
-  position:relative;
-}
-.card::before{
-  content:'█ SYSTEM █ SECURE █ ENCRYPTED █';
-  position:absolute; top:-10px; left:16px;
-  background:#000; padding:0 8px; font-size:10px;
-  color:var(--gd); letter-spacing:2px;
-}
-h1{
-  font-size:26px; letter-spacing:3px; text-align:center;
-  margin-bottom:6px; color:var(--g);
-  text-shadow:0 0 8px var(--g),0 0 20px var(--gd);
-}
-.sub{ text-align:center; color:var(--gd); font-size:12px; letter-spacing:2px; margin-bottom:22px;}
-.mono{ font-family:'Courier New',monospace; }
-input{
-  width:100%; background:#010d05; color:var(--g);
-  border:1px solid rgba(0,255,65,.4);
-  padding:14px 16px; font-family:'Courier New',monospace;
-  font-size:16px; border-radius:8px; outline:none;
-  transition:.2s; letter-spacing:2px;
-}
-input:focus{ border-color:var(--g); box-shadow:0 0 12px rgba(0,255,65,.35); }
-input::placeholder{ color:rgba(0,255,65,.3); letter-spacing:2px; }
-button{
-  width:100%; margin-top:14px;
-  background:linear-gradient(180deg, rgba(0,255,65,.18), rgba(0,255,65,.05));
-  color:var(--g); border:1px solid var(--g);
-  padding:14px 18px; font-family:'Courier New',monospace;
-  font-size:14px; font-weight:bold; letter-spacing:3px;
-  border-radius:8px; cursor:pointer; transition:.2s;
-  text-shadow:0 0 8px var(--g);
-}
-button:hover:not(:disabled){
-  background:linear-gradient(180deg, rgba(0,255,65,.35), rgba(0,255,65,.1));
-  box-shadow:0 0 18px rgba(0,255,65,.55);
-  transform:translateY(-1px);
-}
-button:disabled{ opacity:.5; cursor:not-allowed; }
-.err{ color:var(--red); text-align:center; margin-top:12px; font-size:13px;
-      text-shadow:0 0 8px rgba(255,0,64,.7); min-height:16px; }
-.row{ display:grid; grid-template-columns: 1fr; gap:14px; }
-@media(min-width:720px){ .row{ grid-template-columns:1fr 1fr; } }
-.kv{ display:flex; justify-content:space-between; padding:10px 0;
-     border-bottom:1px dashed rgba(0,255,65,.15); font-size:14px; }
-.kv span:first-child{ color:var(--gd); letter-spacing:1px;}
-.kv span:last-child{ color:var(--g); font-weight:bold; }
-.status-bar{
-  display:flex; justify-content:space-between; align-items:center;
-  font-size:11px; color:var(--gd); margin-bottom:16px; letter-spacing:1px;
-}
-.dot{
-  display:inline-block; width:8px; height:8px; border-radius:50%;
-  background:var(--g); box-shadow:0 0 8px var(--g);
-  animation:pulse 1.4s infinite; vertical-align:middle; margin-right:6px;
-}
-@keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
-.blink{ animation:blink 1s steps(2) infinite; }
-@keyframes blink{ 50%{opacity:0} }
-.typing::after{ content:'_'; animation:blink 1s infinite; }
-a{ color:var(--g); text-decoration:none; }
-.badge{ display:inline-block; padding:2px 8px; border:1px solid var(--g);
-        border-radius:4px; font-size:10px; letter-spacing:2px; }
-.res{
-  margin-top:18px; padding:16px; border:1px solid rgba(0,255,65,.3);
-  border-radius:10px; background:rgba(0,255,65,.03); display:none;
-}
-.res.show{ display:block; animation:fade .35s ease; }
-@keyframes fade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
-.big{ font-size:30px; color:var(--g); text-shadow:0 0 12px var(--g); }
-.center{ text-align:center; }
-.toggle{
-  display:flex; gap:10px; align-items:center; justify-content:space-between;
-  padding:16px; border:1px solid rgba(0,255,65,.3); border-radius:10px;
-  background:rgba(0,255,65,.03); margin:14px 0;
-}
-.pill{ padding:6px 14px; border-radius:20px; font-size:12px; letter-spacing:2px; font-weight:bold;}
-.pill.on{ background:rgba(0,255,65,.2); color:var(--g); border:1px solid var(--g); }
-.pill.off{ background:rgba(255,0,64,.15); color:var(--red); border:1px solid var(--red);}
-.mini{ font-size:11px; color:var(--gd); letter-spacing:1px; }
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-/* Telegram Button Style */
-.tg-btn {
-  display: block;
-  width: 100%;
-  margin-top: 24px;
-  padding: 16px;
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Poppins', sans-serif; }
+
+:root{
+  --bg: #0b0f19;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --accent: #8b5cf6;
+}
+
+html, body {
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+  color: var(--text-main);
+  overflow-x: hidden;
+}
+
+body { padding: 24px 16px 60px; display: flex; flex-direction: column; align-items: center; }
+
+.wrap { width: 100%; max-width: 500px; position: relative; z-index: 2; margin: 0 auto; }
+
+.card {
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 32px 24px;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+h1 { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 8px; letter-spacing: 1px; }
+.sub { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 28px; font-weight: 300; }
+
+input {
+  width: 100%; background: rgba(0,0,0,0.2); color: var(--text-main);
+  border: 1px solid var(--card-border);
+  padding: 16px 20px; font-size: 16px; border-radius: 12px; outline: none;
+  transition: all 0.3s ease; margin-bottom: 16px;
+}
+input:focus { border-color: var(--primary); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+input::placeholder { color: var(--text-muted); }
+
+button {
+  width: 100%; background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white; border: none; padding: 16px; font-size: 15px; font-weight: 600;
+  border-radius: 12px; cursor: pointer; transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6); }
+button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.err { color: #ef4444; text-align: center; margin-top: 14px; font-size: 13px; min-height: 20px; font-weight: 500; }
+
+/* Player Info Styles */
+.res { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--card-border); }
+.res.show { display: block; animation: slideUp 0.4s ease forwards; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+.player-header { text-align: center; margin-bottom: 24px; }
+.player-name { font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+
+.kv { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 14px; }
+.kv:last-child { border-bottom: none; }
+.kv span:first-child { color: var(--text-muted); }
+.kv span:last-child { font-weight: 600; color: var(--text-main); }
+
+.highlight-val { font-size: 18px; color: #10b981 !important; text-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+
+/* Social Buttons */
+.social-container { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+
+.btn-social {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 16px; border-radius: 12px; font-size: 15px; font-weight: 600;
+  text-decoration: none; transition: all 0.3s ease; color: white;
+}
+
+.btn-telegram { background: #229ED9; box-shadow: 0 4px 15px rgba(34, 158, 217, 0.3); }
+.btn-telegram:hover { background: #1e88be; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(34, 158, 217, 0.5); }
+
+.btn-tiktok { background: #000000; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1); }
+.btn-tiktok:hover { background: #111111; transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255, 255, 255, 0.2); border-color: rgba(255,255,255,0.4); }
+
+.icon { width: 20px; height: 20px; fill: currentColor; }
+
+/* Header Bar */
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 13px; color: var(--text-muted); }
+.top-bar a { color: #ef4444; text-decoration: none; font-weight: 500; }
+.top-bar a:hover { text-decoration: underline; }
+
+.pill { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+.pill.on { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+.pill.off { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+.toggle-box { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px; border: 1px solid var(--card-border); margin-bottom: 20px; }
+</style>
+"""
+
+# ================= LOGIN PAGE =================
+LOGIN_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MEDUSA // LOGIN</title>
+""" + BASE_CSS + """
+</head><body>
+<div class="wrap" style="margin-top:15vh;">
+  <div class="card">
+    <h1>MEDUSA</h1>
+    <p class="sub">Premium Free Fire Likes</p>
+    <input type="password" id="pw" placeholder="Enter Password" autofocus autocomplete="off">
+    <button id="btn" onclick="login()">Access Dashboard</button>
+    <p class="err" id="err"></p>
+  </div>
+</div>
+<script>
+async function login(){
+  const pw = document.getElementById('pw').value;
+  const err = document.getElementById('err');
+  const btn = document.getElementById('btn');
+  err.textContent=''; btn.disabled=true; btn.textContent='Authenticating...';
+  try{
+    const r = await fetch('/api/login',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:pw})
+    });
+    const d = await r.json();
+    if(d.success){
+      btn.textContent='Success ✓';
+      setTimeout(()=>location.href='/dashboard', 500);
+    } else {
+      err.textContent='Invalid Password';
+      btn.disabled=false; btn.textContent='Access Dashboard';
+      document.getElementById('pw').value='';
+    }
+  } catch(e){
+    err.textContent='Connection Error'; btn.disabled=false;
+    btn.textContent='Access Dashboard';
+  }
+}
+document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+</script></body></html>"""
+
+
+# ================= DASHBOARD PAGE =================
+DASHBOARD_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MEDUSA // DASHBOARD</title>
+""" + BASE_CSS + """
+</head><body>
+<div class="wrap">
+  <div class="top-bar">
+    <span>Welcome to Medusa</span>
+    <a href="/logout">Logout</a>
+  </div>
+
+  <div class="card">
+    <h1>MEDUSA LIKE</h1>
+    <p class="sub">Boost your Free Fire Profile</p>
+
+    <div class="toggle-box">
+      <span style="font-size:14px; font-weight:500;">Server Status</span>
+      <span id="botPill" class="pill on">ONLINE</span>
+    </div>
+
+    <input type="text" id="uid" placeholder="Enter Free Fire UID" inputmode="numeric" autocomplete="off">
+    <button id="go" onclick="run()">Send Likes Now</button>
+    <p class="err" id="err"></p>
+
+    <div class="res" id="res">
+      <div class="player-header">
+        <div class="player-name" id="pname">Player Name</div>
+      </div>
+      <div class="kv"><span>UID</span><span id="puid">—</span></div>
+      <div class="kv"><span>Level</span><span id="plevel">—</span></div>
+      <div class="kv"><span>Region</span><span id="pregion">—</span></div>
+      
+      <div style="height: 10px;"></div>
+      
+      <div class="kv"><span>Likes Before</span><span id="pbefore">—</span></div>
+      <div class="kv"><span>Likes After</span><span id="pafter">—</span></div>
+      <div class="kv"><span>Likes Given</span><span class="highlight-val" id="pgiven">—</span></div>
+      <div class="kv"><span>Daily Remaining</span><span id="premain">—</span></div>
+    </div>
+  </div>
+
+  <div class="social-container">
+    <a href="https://t.me/MEDUSA_LIKE" target="_blank" class="btn-social btn-telegram">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.54.223l.19-2.712 5.01-4.523c.218-.19-.05-.298-.338-.108l-6.19 3.89-2.673-.83c-.58-.182-.594-.58.122-.86l10.426-4.018c.485-.176.907.108.752.755z"/></svg>
+      Join Telegram
+    </a>
+    <a href="https://www.tiktok.com/@hafsan_amv" target="_blank" class="btn-social btn-tiktok">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.11-3.44-3.17-3.61-5.46-.02-.65-.02-1.3.05-1.95.4-2.82 2.59-5.25 5.39-5.87 1.09-.23 2.22-.19 3.3-.04v4.11c-.64-.19-1.33-.24-1.97-.12-1.31.22-2.45 1.18-2.86 2.43-.32.97-.22 2.05.26 2.95.61 1.18 1.91 1.88 3.24 1.8 1.16-.04 2.23-.68 2.82-1.69.25-.42.38-.9.38-1.38.02-3.35.01-6.71.01-10.07h4.65z"/></svg>
+      Follow on TikTok
+    </a>
+  </div>
+</div>
+
+<script>
+async function refreshStatus(){
+  try{
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    const pill = document.getElementById('botPill');
+    if(d.bot_enabled){
+      pill.className='pill on'; pill.textContent='ONLINE';
+      document.getElementById('go').disabled=false;
+    } else {
+      pill.className='pill off'; pill.textContent='OFFLINE';
+      document.getElementById('go').disabled=true;
+    }
+  }catch(e){}
+}
+refreshStatus();
+setInterval(refreshStatus, 8000);
+
+async function run(){
+  const uid = document.getElementById('uid').value.trim();
+  const err = document.getElementById('err');
+  const btn = document.getElementById('go');
+  const res = document.getElementById('res');
+  err.textContent='';
+  
+  if(!/^\\d+$/.test(uid)){ err.textContent='Please enter a valid numeric UID'; return; }
+  
+  btn.disabled=true; btn.textContent='Processing...';
+  res.classList.remove('show');
+  
+  try{
+    const r = await fetch('/api/like',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({uid})
+    });
+    const d = await r.json();
+    
+    if(!r.ok){
+      err.textContent='✗ ' + (d.error || 'Request failed');
+      btn.disabled=false; btn.textContent='Send Likes Now';
+      return;
+    }
+    
+    document.getElementById('pname').textContent   = d.player.nickname || 'Unknown';
+    document.getElementById('puid').textContent    = d.player.uid;
+    document.getElementById('plevel').textContent  = d.player.level;
+    document.getElementById('pregion').textContent = d.player.region || 'BD';
+    document.getElementById('pbefore').textContent = d.likes.before;
+    document.getElementById('pafter').textContent  = d.likes.after;
+    document.getElementById('pgiven').textContent  = '+' + d.likes.given;
+    document.getElementById('premain').textContent = d.stats.remaining;
+    
+    res.classList.add('show');
+    btn.textContent='Success! ✓';
+    setTimeout(()=>{btn.disabled=false; btn.textContent='Send Likes Now';}, 2000);
+  }catch(e){
+    err.textContent='Network Error';
+    btn.disabled=false; btn.textContent='Send Likes Now';
+  }
+}
+document.getElementById('uid').addEventListener('keydown', e=>{ if(e.key==='Enter') run(); });
+</script></body></html>"""
+
+
+# ================= ADMIN LOGIN =================
+ADMIN_LOGIN_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MEDUSA // ADMIN</title>
+""" + BASE_CSS + """
+</head><body>
+<div class="wrap" style="margin-top:15vh;">
+  <div class="card">
+    <h1 style="color:#ef4444;">ADMIN ROOT</h1>
+    <p class="sub">Restricted Access Only</p>
+    <input type="password" id="pw" placeholder="Admin Password" autofocus autocomplete="off">
+    <button onclick="login()" style="background:#ef4444; box-shadow:0 4px 15px rgba(239,68,68,0.4);">Unlock Root</button>
+    <p class="err" id="err"></p>
+  </div>
+</div>
+<script>
+async function login(){
+  const pw = document.getElementById('pw').value;
+  const err = document.getElementById('err');
+  err.textContent='';
+  try{
+    const r = await fetch('/api/admin/login',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({password:pw})
+    });
+    const d = await r.json();
+    if(d.success){ location.reload(); }
+    else { err.textContent='Invalid Admin Password'; }
+  }catch(e){ err.textContent='Connection Error'; }
+}
+document.getElementById('pw').addEventListener('keydown', e=>{ if(e.key==='Enter') login(); });
+</script></body></html>"""
+
+
+# ================= ADMIN PANEL =================
+ADMIN_PANEL = """<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MEDUSA // ROOT</title>
+""" + BASE_CSS + """
+</head><body>
+<div class="wrap">
+  <div class="top-bar">
+    <span style="color:#ef4444; font-weight:600;">ROOT ACCESS</span>
+    <a href="/admin/logout">Exit Root</a>
+  </div>
+
+  <div class="card">
+    <h1>Admin Panel</h1>
+    <p class="sub">Global Bot Management</p>
+
+    <div class="toggle-box" style="flex-direction:column; gap:16px;">
+      <div style="display:flex; justify-content:space-between; width:100%;">
+        <span style="font-weight:500;">Bot Status</span>
+        <span id="botPill" class="pill on">ONLINE</span>
+      </div>
+      <button id="tgl" onclick="toggle()" style="background:rgba(255,255,255,0.1); box-shadow:none; border:1px solid rgba(255,255,255,0.2);">Toggle Bot State</button>
+    </div>
+
+    <div class="kv"><span>Daily Limit</span><span id="lim">—</span></div>
+    <div class="kv"><span>Used Today</span><span id="used">—</span></div>
+    <div class="kv"><span>Remaining</span><span id="rem" style="color:#10b981;">—</span></div>
+    <div class="kv"><span>Server Region</span><span>Bangladesh (BD)</span></div>
+  </div>
+</div>
+
+<script>
+async function refresh(){
+  const r = await fetch('/api/admin/status');
+  const d = await r.json();
+  const pill = document.getElementById('botPill');
+  if(d.enabled){ pill.className='pill on'; pill.textContent='ONLINE'; }
+  else { pill.className='pill off'; pill.textContent='OFFLINE'; }
+  document.getElementById('lim').textContent = d.daily_limit;
+  document.getElementById('used').textContent = d.used;
+  document.getElementById('rem').textContent = d.remaining;
+}
+async function toggle(){
+  const btn = document.getElementById('tgl');
+  btn.disabled=true; btn.textContent='Switching...';
+  await fetch('/api/admin/toggle', {method:'POST'});
+  await refresh();
+  btn.disabled=false; btn.textContent='Toggle Bot State';
+}
+refresh();
+setInterval(refresh, 8000);
+</script></body></html>"""
+
+
+# ================= ROUTES =================
+@app.route('/')
+def home():
+    if session.get('logged_in'):
+        return redirect('/dashboard')
+    return LOGIN_PAGE
+
+@app.route('/dashboard')
+def dashboard():
+    if not session.get('logged_in'):
+        return redirect('/')
+    return DASHBOARD_PAGE
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.get_json(silent=True) or {}
+    if data.get('password') == ACCESS_PASSWORD:
+        session['logged_in'] = True
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 401
+
+@app.route('/api/status')
+def api_status():
+    return jsonify({
+        "bot_enabled": get_bot_state(),
+        "daily_limit": daily_limit,
+        "used": used_count,
+        "remaining": max(daily_limit - used_count, 0),
+    })
+
+@app.route('/api/like', methods=['POST'])
+def api_like():
+    global used_count
+    if not session.get('logged_in'):
+        return jsonify({"error": "UNAUTHORIZED"}), 401
+    if not get_bot_state():
+        return jsonify({"error": "BOT OFFLINE — CONTACT ADMIN"}), 503
+    data = request.get_json(silent=True) or {}
+    uid = str(data.get('uid', '')).strip()
+    if not uid.isdigit():
+        return jsonify({"error": "INVALID UID"}), 400
+    if used_count >= daily_limit:
+        return jsonify({"error": "DAILY LIMIT REACHED. TRY TOMORROW."}), 429
+    try:
+        tokens = load_tokens()
+        if not tokens:
+            return jsonify({"error": "TOKEN LOAD FAILED"}), 500
+        token = tokens[0]['token']
+        enc_uid = enc(uid)
+        if enc_uid is None:
+            return jsonify({"error": "ENCRYPTION FAILED"}), 500
+        before = make_request(enc_uid, ALLOWED_REGION, token)
+        if before is None:
+            return jsonify({"error": "PLAYER NOT FOUND OR API DOWN"}), 404
+        before_like = before.AccountInfo.Likes
+
+        asyncio.run(send_multiple_requests(uid, ALLOWED_REGION, BD_LIKE_URL))
+
+        after = make_request(enc_uid, ALLOWED_REGION, token) or before
+        after_like = after.AccountInfo.Likes
+        like_given = max(after_like - before_like, 0)
+        if like_given > 0:
+            used_count += 1
+
+        return jsonify({
+            "success": True,
+            "player": {
+                "nickname": after.AccountInfo.PlayerNickname or "—",
+                "level":    after.AccountInfo.Levels,
+                "uid":      after.AccountInfo.UID,
+                "region":   after.AccountInfo.PlayerRegion or "BD",
+            },
+            "likes": {
+                "before": before_like,
+                "after":  after_like,
+                "given":  like_given,
+            },
+            "stats": {
+                "daily_limit": daily_limit,
+                "used": used_count,
+                "remaining": max(daily_limit - used_count, 0),
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"api_like: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/admin')
+def admin_route():
+    if not session.get('admin_logged_in'):
+        return ADMIN_LOGIN_PAGE
+    return ADMIN_PANEL
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect('/admin')
+
+@app.route('/api/admin/login', methods=['POST'])
+def api_admin_login():
+    data = request.get_json(silent=True) or {}
+    if data.get('password') == ADMIN_PASSWORD:
+        session['admin_logged_in'] = True
+        return jsonify({"success": True})
+    return jsonify({"success": False}), 401
+
+@app.route('/api/admin/status')
+def api_admin_status():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "UNAUTHORIZED"}), 401
+    return jsonify({
+        "enabled": get_bot_state(),
+        "daily_limit": daily_limit,
+        "used": used_count,
+        "remaining": max(daily_limit - used_count, 0),
+    })
+
+@app.route('/api/admin/toggle', methods=['POST'])
+def api_admin_toggle():
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "UNAUTHORIZED"}), 401
+    new_state = not get_bot_state()
+    set_bot_state(new_state)
+    return jsonify({"success": True, "enabled": new_state})
+
+
+# ================= LEGACY API =================
+@app.route('/like', methods=['GET'])
+def handle_requests():
+    global used_count
+    api_key = request.args.get("key")
+    if api_key not in VALID_API_KEYS:
+        return jsonify({"error": "Invalid or missing API key", "status": 3}), 401
+    if not get_bot_state():
+        return jsonify({"error": "Bot offline", "status": 5}), 503
+    uid = request.args.get("uid")
+    if not uid:
+        return jsonify({"error": "UID is required"}), 400
+    if used_count >= daily_limit:
+        return jsonify({"error": "Daily limit reached", "status": 4}), 429
+    try:
+        tokens = load_tokens()
+        if not tokens:
+            raise Exception("Failed to load BD tokens.")
+        token = tokens[0]['token']
+        enc_uid = enc(uid)
+        before = make_request(enc_uid, ALLOWED_REGION, token)
+        if before is None:
+            raise Exception("Failed to get initial info.")
+        before_like = before.AccountInfo.Likes
+        asyncio.run(send_multiple_requests(uid, ALLOWED_REGION, BD_LIKE_URL))
+        after = make_request(enc_uid, ALLOWED_REGION, token)
+        after_like = after.AccountInfo.Likes
+        like_given = after_like - before_like
+        status = 1 if like_given > 0 else 2
+        if status == 1:
+            used_count += 1
+        return jsonify(OrderedDict([
+            ("LikesGivenByAPI", like_given),
+            ("LikesafterCommand", after_like),
+            ("LikesbeforeCommand", before_like),
+            ("PlayerNickname", after.AccountInfo.PlayerNickname),
+            ("Level", after.AccountInfo.Levels),
+            ("Region", "BD"),
+            ("UID", after.AccountInfo.UID),
+            ("status", status),
+            ("daily_limit", daily_limit),
+            ("used", used_count),
+            ("remaining", max(daily_limit - used_count, 0)),
+        ]))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/remain', methods=['GET'])
+def remain_info():
+    return jsonify({
+        "server": "BD",
+        "daily_limit": daily_limit,
+        "remaining": max(daily_limit - used_count, 0),
+        "used": used_count,
+        "reset_info": "4:00 AM IST",
+    })
+
+
+if __name__ == '__main__':
+    app.run(debug=True, use_reloader=False)16px;
   background: rgba(0,255,65,.05);
   color: var(--g);
   text-align: center;
