@@ -28,7 +28,7 @@ BD_INFO_URL = "https://clientbp.ggpolarbear.com/GetPlayerPersonalShow"
 daily_limit = 500
 used_count = 0
 
-# 🤖 Bot ON/OFF state
+# 🤖 Bot ON/OFF state (Vercel requires /tmp for writable files)
 BOT_STATE_FILE = "/tmp/bot_state.json" if os.environ.get("VERCEL") else "bot_state.json"
 
 def get_bot_state():
@@ -558,21 +558,26 @@ def api_like():
         return jsonify({"error": "BOT OFFLINE — CONTACT ADMIN"}), 503
     data = request.get_json(silent=True) or {}
     uid = str(data.get('uid', '')).strip()
+    
     if not uid.isdigit():
         return jsonify({"error": "INVALID UID"}), 400
     if used_count >= daily_limit:
         return jsonify({"error": "DAILY LIMIT REACHED. TRY TOMORROW."}), 429
+        
     try:
         tokens = load_tokens()
         if not tokens:
             return jsonify({"error": "TOKEN LOAD FAILED"}), 500
+            
         token = tokens[0]['token']
         enc_uid = enc(uid)
         if enc_uid is None:
             return jsonify({"error": "ENCRYPTION FAILED"}), 500
+            
         before = make_request(enc_uid, ALLOWED_REGION, token)
         if before is None:
             return jsonify({"error": "PLAYER NOT FOUND OR API DOWN"}), 404
+            
         before_like = before.AccountInfo.Likes
 
         asyncio.run(send_multiple_requests(uid, ALLOWED_REGION, BD_LIKE_URL))
@@ -580,6 +585,7 @@ def api_like():
         after = make_request(enc_uid, ALLOWED_REGION, token) or before
         after_like = after.AccountInfo.Likes
         like_given = max(after_like - before_like, 0)
+        
         if like_given > 0:
             used_count += 1
 
@@ -604,7 +610,8 @@ def api_like():
         })
     except Exception as e:
         app.logger.error(f"api_like: {e}")
-        return jsonify({"error": str(e)}), 500
+        # 500 Internal Error এর জায়গায় আসল এররটি পাঠানো হচ্ছে যাতে বোঝা যায় কী সমস্যা
+        return jsonify({"error": f"Server Error: {str(e)}"}), 500
 
 @app.route('/admin')
 def admin_route():
@@ -646,483 +653,6 @@ def api_admin_toggle():
 
 
 # ================= LEGACY API =================
-@app.route('/like', methods=['GET'])
-def handle_requests():
-    global used_count
-    api_key = request.args.get("key")
-    if api_key not in VALID_API_KEYS:
-        return jsonify({"error": "Invalid or missing API key", "status": 3}), 401
-    if not get_bot_state():
-        return jsonify({"error": "Bot offline", "status": 5}), 503
-    uid = request.args.get("uid")
-    if not uid:
-        return jsonify({"error": "UID is required"}), 400
-    if used_count >= daily_limit:
-        return jsonify({"error": "Daily limit reached", "status": 4}), 429
-    try:
-        tokens = load_tokens()
-        if not tokens:
-            raise Exception("Failed to load BD tokens.")
-        token = tokens[0]['token']
-        enc_uid = enc(uid)
-        before = make_request(enc_uid, ALLOWED_REGION, token)
-        if before is None:
-            raise Exception("Failed to get initial info.")
-        before_like = before.AccountInfo.Likes
-        asyncio.run(send_multiple_requests(uid, ALLOWED_REGION, BD_LIKE_URL))
-        after = make_request(enc_uid, ALLOWED_REGION, token)
-        after_like = after.AccountInfo.Likes
-        like_given = after_like - before_like
-        status = 1 if like_given > 0 else 2
-        if status == 1:
-            used_count += 1
-        return jsonify(OrderedDict([
-            ("LikesGivenByAPI", like_given),
-            ("LikesafterCommand", after_like),
-            ("LikesbeforeCommand", before_like),
-            ("PlayerNickname", after.AccountInfo.PlayerNickname),
-            ("Level", after.AccountInfo.Levels),
-            ("Region", "BD"),
-            ("UID", after.AccountInfo.UID),
-            ("status", status),
-            ("daily_limit", daily_limit),
-            ("used", used_count),
-            ("remaining", max(daily_limit - used_count, 0)),
-        ]))
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/remain', methods=['GET'])
-def remain_info():
-    return jsonify({
-        "server": "BD",
-        "daily_limit": daily_limit,
-        "remaining": max(daily_limit - used_count, 0),
-        "used": used_count,
-        "reset_info": "4:00 AM IST",
-    })
-
-
-if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False)16px;
-  background: rgba(0,255,65,.05);
-  color: var(--g);
-  text-align: center;
-  border: 1px solid var(--g);
-  border-radius: 8px;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  font-weight: bold;
-  letter-spacing: 2px;
-  text-decoration: none;
-  text-shadow: 0 0 8px var(--g);
-  box-shadow: 0 0 15px rgba(0,255,65,.15);
-  transition: all 0.3s ease;
-}
-.tg-btn:hover {
-  background: rgba(0,255,65,.2);
-  box-shadow: 0 0 25px rgba(0,255,65,.5);
-  transform: translateY(-2px);
-}
-</style>
-"""
-
-
-# ================= LOGIN PAGE =================
-LOGIN_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MEDUSA // ACCESS TERMINAL</title>
-""" + BASE_CSS + """
-</head><body>
-<div class="wrap" style="max-width:460px; margin-top:10vh;">
-  <div class="card">
-    <div class="status-bar">
-      <span><span class="dot"></span>TERMINAL ONLINE</span>
-      <span>v3.8.5</span>
-    </div>
-    <h1 class="glow">◤ MEDUSA ACCESS ◢</h1>
-    <p class="sub typing">RESTRICTED AREA · PASSKEY REQUIRED</p>
-    <input type="password" id="pw" placeholder="ENTER PASSKEY" autofocus autocomplete="off">
-    <button id="btn" onclick="login()">» AUTHENTICATE «</button>
-    <p class="err" id="err"></p>
-    <p class="mini center" style="margin-top:18px;">[ UNAUTHORIZED ACCESS IS MONITORED ]</p>
-  </div>
-</div>
-<script>
-async function login(){
-  const pw = document.getElementById('pw').value;
-  const err = document.getElementById('err');
-  const btn = document.getElementById('btn');
-  err.textContent=''; btn.disabled=true; btn.textContent='AUTHENTICATING...';
-  try{
-    const r = await fetch('/api/login',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({password:pw})
-    });
-    const d = await r.json();
-    if(d.success){
-      btn.textContent='ACCESS GRANTED ✓';
-      setTimeout(()=>location.href='/dashboard', 500);
-    } else {
-      err.textContent='✗ ACCESS DENIED — INVALID PASSKEY';
-      btn.disabled=false; btn.textContent='» AUTHENTICATE «';
-      document.getElementById('pw').value='';
-    }
-  } catch(e){
-    err.textContent='✗ CONNECTION ERROR'; btn.disabled=false;
-    btn.textContent='» AUTHENTICATE «';
-  }
-}
-document.getElementById('pw').addEventListener('keydown', e=>{
-  if(e.key==='Enter') login();
-});
-</script></body></html>"""
-
-
-# ================= DASHBOARD PAGE =================
-DASHBOARD_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MEDUSA // CONTROL PANEL</title>
-""" + BASE_CSS + """
-</head><body>
-<div class="wrap">
-  <div class="status-bar">
-    <span><span class="dot"></span>LINK ESTABLISHED · BD SERVER</span>
-    <span><a href="/logout">[ LOGOUT ]</a></span>
-  </div>
-
-  <div class="card">
-    <h1 class="glow">⌁ MEDUSA LIKE WEBSITE ⌁</h1>
-    <p class="sub">AUTHORIZED SESSION · REGION: BANGLADESH</p>
-
-    <div class="toggle">
-      <span><span class="mini">BOT STATUS</span></span>
-      <span id="botPill" class="pill on">ONLINE</span>
-    </div>
-
-    <input type="text" id="uid" placeholder="ENTER FF UID" inputmode="numeric" autocomplete="off">
-    <button id="go" onclick="run()">» INITIATE LIKE SEQUENCE «</button>
-    <p class="err" id="err"></p>
-
-    <div class="res" id="res">
-      <div class="center" style="margin-bottom:14px;">
-        <div class="mini">PLAYER NICKNAME</div>
-        <div class="big" id="pname">—</div>
-      </div>
-      <div class="kv"><span>UID</span><span id="puid">—</span></div>
-      <div class="kv"><span>LEVEL</span><span id="plevel">—</span></div>
-      <div class="kv"><span>REGION</span><span id="pregion">—</span></div>
-      <div class="kv"><span>LIKES BEFORE</span><span id="pbefore">—</span></div>
-      <div class="kv"><span>LIKES AFTER</span><span id="pafter">—</span></div>
-      <div class="kv" style="border-bottom:none;">
-        <span>LIKES GIVEN</span>
-        <span class="glow" id="pgiven" style="font-size:20px;">—</span>
-      </div>
-      <div class="kv" style="border-bottom:none;">
-        <span>DAILY REMAINING</span><span id="premain">—</span>
-      </div>
-    </div>
-  </div>
-
-  <a href="https://t.me/MEDUSA_LIKE" target="_blank" class="tg-btn">
-    ✈ JOIN TELEGRAM @MEDUSA_LIKE ✈
-  </a>
-
-  <p class="mini center" style="margin-top:14px;">
-    UNAUTHORIZED REDISTRIBUTION WILL BE TRACED · v3.8.5
-  </p>
-</div>
-
-<script>
-async function refreshStatus(){
-  try{
-    const r = await fetch('/api/status');
-    const d = await r.json();
-    const pill = document.getElementById('botPill');
-    if(d.bot_enabled){
-      pill.className='pill on'; pill.textContent='ONLINE';
-      document.getElementById('go').disabled=false;
-    } else {
-      pill.className='pill off'; pill.textContent='OFFLINE';
-      document.getElementById('go').disabled=true;
-    }
-  }catch(e){}
-}
-refreshStatus();
-setInterval(refreshStatus, 8000);
-
-async function run(){
-  const uid = document.getElementById('uid').value.trim();
-  const err = document.getElementById('err');
-  const btn = document.getElementById('go');
-  const res = document.getElementById('res');
-  err.textContent='';
-  if(!/^\\d+$/.test(uid)){ err.textContent='✗ INVALID UID'; return; }
-  btn.disabled=true; btn.textContent='TRANSMITTING PACKETS...';
-  res.classList.remove('show');
-  try{
-    const r = await fetch('/api/like',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({uid})
-    });
-    const d = await r.json();
-    if(!r.ok){
-      err.textContent='✗ ' + (d.error || 'REQUEST FAILED');
-      btn.disabled=false; btn.textContent='» INITIATE LIKE SEQUENCE «';
-      return;
-    }
-    document.getElementById('pname').textContent   = d.player.nickname || '—';
-    document.getElementById('puid').textContent    = d.player.uid;
-    document.getElementById('plevel').textContent  = d.player.level;
-    document.getElementById('pregion').textContent = d.player.region || 'BD';
-    document.getElementById('pbefore').textContent = d.likes.before;
-    document.getElementById('pafter').textContent  = d.likes.after;
-    document.getElementById('pgiven').textContent  = '+' + d.likes.given;
-    document.getElementById('premain').textContent = d.stats.remaining;
-    res.classList.add('show');
-    btn.textContent='✓ SEQUENCE COMPLETE';
-    setTimeout(()=>{btn.disabled=false; btn.textContent='» INITIATE LIKE SEQUENCE «';}, 1800);
-  }catch(e){
-    err.textContent='✗ NETWORK ERROR';
-    btn.disabled=false; btn.textContent='» INITIATE LIKE SEQUENCE «';
-  }
-}
-document.getElementById('uid').addEventListener('keydown', e=>{
-  if(e.key==='Enter') run();
-});
-</script></body></html>"""
-
-
-# ================= ADMIN LOGIN =================
-ADMIN_LOGIN_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MEDUSA // ADMIN ROOT</title>
-""" + BASE_CSS + """
-</head><body>
-<div class="wrap" style="max-width:460px; margin-top:10vh;">
-  <div class="card">
-    <div class="status-bar">
-      <span><span class="dot"></span>ROOT TERMINAL</span>
-      <span>ADMIN</span>
-    </div>
-    <h1 class="glow">⚡ ADMIN ROOT ⚡</h1>
-    <p class="sub">PRIVILEGED ACCESS ONLY</p>
-    <input type="password" id="pw" placeholder="ADMIN PASSKEY" autofocus autocomplete="off">
-    <button onclick="login()">» UNLOCK ROOT «</button>
-    <p class="err" id="err"></p>
-  </div>
-</div>
-<script>
-async function login(){
-  const pw = document.getElementById('pw').value;
-  const err = document.getElementById('err');
-  err.textContent='';
-  try{
-    const r = await fetch('/api/admin/login',{
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({password:pw})
-    });
-    const d = await r.json();
-    if(d.success){ location.reload(); }
-    else { err.textContent='✗ INVALID ADMIN PASSKEY'; }
-  }catch(e){ err.textContent='✗ CONNECTION ERROR'; }
-}
-document.getElementById('pw').addEventListener('keydown', e=>{
-  if(e.key==='Enter') login();
-});
-</script></body></html>"""
-
-
-# ================= ADMIN PANEL =================
-ADMIN_PANEL = """<!DOCTYPE html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MEDUSA // ROOT CONTROL</title>
-""" + BASE_CSS + """
-</head><body>
-<div class="wrap">
-  <div class="status-bar">
-    <span><span class="dot"></span>ROOT ACCESS GRANTED</span>
-    <span><a href="/admin/logout">[ EXIT ROOT ]</a></span>
-  </div>
-
-  <div class="card">
-    <h1 class="glow">⌬ ROOT CONTROL ⌬</h1>
-    <p class="sub">GLOBAL BOT & SERVER MANAGEMENT</p>
-
-    <div class="toggle" style="flex-direction:column; align-items:stretch; gap:14px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span class="mini">BOT STATUS</span>
-        <span id="botPill" class="pill on">ONLINE</span>
-      </div>
-      <button id="tgl" onclick="toggle()">» TOGGLE BOT STATE «</button>
-    </div>
-
-    <div class="kv"><span>DAILY LIMIT</span><span id="lim">—</span></div>
-    <div class="kv"><span>USED TODAY</span><span id="used">—</span></div>
-    <div class="kv"><span>REMAINING</span><span id="rem">—</span></div>
-    <div class="kv"><span>SERVER</span><span>BANGLADESH (BD)</span></div>
-  </div>
-
-  <p class="mini center" style="margin-top:14px;">
-    ⚠ ROOT ACTIONS ARE LOGGED · v3.8.5
-  </p>
-</div>
-
-<script>
-async function refresh(){
-  const r = await fetch('/api/admin/status');
-  const d = await r.json();
-  const pill = document.getElementById('botPill');
-  if(d.enabled){ pill.className='pill on'; pill.textContent='ONLINE'; }
-  else { pill.className='pill off'; pill.textContent='OFFLINE'; }
-  document.getElementById('lim').textContent = d.daily_limit;
-  document.getElementById('used').textContent = d.used;
-  document.getElementById('rem').textContent = d.remaining;
-}
-async function toggle(){
-  const btn = document.getElementById('tgl');
-  btn.disabled=true; btn.textContent='SWITCHING...';
-  await fetch('/api/admin/toggle', {method:'POST'});
-  await refresh();
-  btn.disabled=false; btn.textContent='» TOGGLE BOT STATE «';
-}
-refresh();
-setInterval(refresh, 8000);
-</script></body></html>"""
-
-
-# ================= ROUTES =================
-@app.route('/')
-def home():
-    if session.get('logged_in'):
-        return redirect('/dashboard')
-    return LOGIN_PAGE
-
-@app.route('/dashboard')
-def dashboard():
-    if not session.get('logged_in'):
-        return redirect('/')
-    return DASHBOARD_PAGE
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/')
-
-@app.route('/api/login', methods=['POST'])
-def api_login():
-    data = request.get_json(silent=True) or {}
-    if data.get('password') == ACCESS_PASSWORD:
-        session['logged_in'] = True
-        return jsonify({"success": True})
-    return jsonify({"success": False}), 401
-
-@app.route('/api/status')
-def api_status():
-    return jsonify({
-        "bot_enabled": get_bot_state(),
-        "daily_limit": daily_limit,
-        "used": used_count,
-        "remaining": max(daily_limit - used_count, 0),
-    })
-
-@app.route('/api/like', methods=['POST'])
-def api_like():
-    global used_count
-    if not session.get('logged_in'):
-        return jsonify({"error": "UNAUTHORIZED"}), 401
-    if not get_bot_state():
-        return jsonify({"error": "BOT OFFLINE — CONTACT ADMIN"}), 503
-    data = request.get_json(silent=True) or {}
-    uid = str(data.get('uid', '')).strip()
-    if not uid.isdigit():
-        return jsonify({"error": "INVALID UID"}), 400
-    if used_count >= daily_limit:
-        return jsonify({"error": "DAILY LIMIT REACHED. RESET AT 4:00 AM IST."}), 429
-    try:
-        tokens = load_tokens()
-        if not tokens:
-            return jsonify({"error": "TOKEN LOAD FAILED"}), 500
-        token = tokens[0]['token']
-        enc_uid = enc(uid)
-        if enc_uid is None:
-            return jsonify({"error": "ENCRYPTION FAILED"}), 500
-        before = make_request(enc_uid, ALLOWED_REGION, token)
-        if before is None:
-            return jsonify({"error": "PLAYER NOT FOUND OR API DOWN"}), 404
-        before_like = before.AccountInfo.Likes
-
-        asyncio.run(send_multiple_requests(uid, ALLOWED_REGION, BD_LIKE_URL))
-
-        after = make_request(enc_uid, ALLOWED_REGION, token) or before
-        after_like = after.AccountInfo.Likes
-        like_given = max(after_like - before_like, 0)
-        if like_given > 0:
-            used_count += 1
-
-        return jsonify({
-            "success": True,
-            "player": {
-                "nickname": after.AccountInfo.PlayerNickname or "—",
-                "level":    after.AccountInfo.Levels,
-                "uid":      after.AccountInfo.UID,
-                "region":   after.AccountInfo.PlayerRegion or "BD",
-            },
-            "likes": {
-                "before": before_like,
-                "after":  after_like,
-                "given":  like_given,
-            },
-            "stats": {
-                "daily_limit": daily_limit,
-                "used": used_count,
-                "remaining": max(daily_limit - used_count, 0),
-            }
-        })
-    except Exception as e:
-        app.logger.error(f"api_like: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/admin')
-def admin_route():
-    if not session.get('admin_logged_in'):
-        return ADMIN_LOGIN_PAGE
-    return ADMIN_PANEL
-
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect('/admin')
-
-@app.route('/api/admin/login', methods=['POST'])
-def api_admin_login():
-    data = request.get_json(silent=True) or {}
-    if data.get('password') == ADMIN_PASSWORD:
-        session['admin_logged_in'] = True
-        return jsonify({"success": True})
-    return jsonify({"success": False}), 401
-
-@app.route('/api/admin/status')
-def api_admin_status():
-    if not session.get('admin_logged_in'):
-        return jsonify({"error": "UNAUTHORIZED"}), 401
-    return jsonify({
-        "enabled": get_bot_state(),
-        "daily_limit": daily_limit,
-        "used": used_count,
-        "remaining": max(daily_limit - used_count, 0),
-    })
-
-@app.route('/api/admin/toggle', methods=['POST'])
-def api_admin_toggle():
-    if not session.get('admin_logged_in'):
-        return jsonify({"error": "UNAUTHORIZED"}), 401
-    new_state = not get_bot_state()
-    set_bot_state(new_state)
-    return jsonify({"success": True, "enabled": new_state})
-
-
-# ================= LEGACY API (kept for API-key users) =================
 @app.route('/like', methods=['GET'])
 def handle_requests():
     global used_count
