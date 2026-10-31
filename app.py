@@ -14,7 +14,7 @@ from google.protobuf.message import DecodeError
 from collections import OrderedDict
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "zexxy-hacker-terminal-secret-2024-x9k")
+app.secret_key = os.environ.get("SECRET_KEY", "medusa-hacker-terminal-secret-2024-x9k")
 
 # 🔐 Access Passwords
 ACCESS_PASSWORD = "HK-385-HK"
@@ -28,7 +28,7 @@ BD_INFO_URL = "https://clientbp.ggpolarbear.com/GetPlayerPersonalShow"
 daily_limit = 500
 used_count = 0
 
-# 🤖 Bot ON/OFF state (file-based for Vercel warm persistence)
+# 🤖 Bot ON/OFF state
 BOT_STATE_FILE = "/tmp/bot_state.json" if os.environ.get("VERCEL") else "bot_state.json"
 
 def get_bot_state():
@@ -46,7 +46,7 @@ def set_bot_state(enabled):
         pass
 
 
-# ================= CORE HELPERS (unchanged) =================
+# ================= CORE HELPERS =================
 def load_tokens():
     try:
         with open("token_bd.json", "r") as f:
@@ -270,6 +270,32 @@ a{ color:var(--g); text-decoration:none; }
 .pill.on{ background:rgba(0,255,65,.2); color:var(--g); border:1px solid var(--g); }
 .pill.off{ background:rgba(255,0,64,.15); color:var(--red); border:1px solid var(--red);}
 .mini{ font-size:11px; color:var(--gd); letter-spacing:1px; }
+
+/* Telegram Button Style */
+.tg-btn {
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(0,255,65,.05);
+  color: var(--g);
+  text-align: center;
+  border: 1px solid var(--g);
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-shadow: 0 0 8px var(--g);
+  box-shadow: 0 0 15px rgba(0,255,65,.15);
+  transition: all 0.3s ease;
+}
+.tg-btn:hover {
+  background: rgba(0,255,65,.2);
+  box-shadow: 0 0 25px rgba(0,255,65,.5);
+  transform: translateY(-2px);
+}
 </style>
 """
 
@@ -277,7 +303,7 @@ a{ color:var(--g); text-decoration:none; }
 # ================= LOGIN PAGE =================
 LOGIN_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZEXXY // ACCESS TERMINAL</title>
+<title>MEDUSA // ACCESS TERMINAL</title>
 """ + BASE_CSS + """
 </head><body>
 <div class="wrap" style="max-width:460px; margin-top:10vh;">
@@ -286,7 +312,7 @@ LOGIN_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
       <span><span class="dot"></span>TERMINAL ONLINE</span>
       <span>v3.8.5</span>
     </div>
-    <h1 class="glow">◤ HACKER ACCESS ◢</h1>
+    <h1 class="glow">◤ MEDUSA ACCESS ◢</h1>
     <p class="sub typing">RESTRICTED AREA · PASSKEY REQUIRED</p>
     <input type="password" id="pw" placeholder="ENTER PASSKEY" autofocus autocomplete="off">
     <button id="btn" onclick="login()">» AUTHENTICATE «</button>
@@ -328,7 +354,7 @@ document.getElementById('pw').addEventListener('keydown', e=>{
 # ================= DASHBOARD PAGE =================
 DASHBOARD_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZEXXY // CONTROL PANEL</title>
+<title>MEDUSA // CONTROL PANEL</title>
 """ + BASE_CSS + """
 </head><body>
 <div class="wrap">
@@ -338,7 +364,7 @@ DASHBOARD_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
   </div>
 
   <div class="card">
-    <h1 class="glow">⌁ ZEXXY LIKE ENGINE ⌁</h1>
+    <h1 class="glow">⌁ MEDUSA LIKE WEBSITE ⌁</h1>
     <p class="sub">AUTHORIZED SESSION · REGION: BANGLADESH</p>
 
     <div class="toggle">
@@ -369,6 +395,10 @@ DASHBOARD_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
       </div>
     </div>
   </div>
+
+  <a href="https://t.me/MEDUSA_LIKE" target="_blank" class="tg-btn">
+    ✈ JOIN TELEGRAM @MEDUSA_LIKE ✈
+  </a>
 
   <p class="mini center" style="margin-top:14px;">
     UNAUTHORIZED REDISTRIBUTION WILL BE TRACED · v3.8.5
@@ -438,7 +468,7 @@ document.getElementById('uid').addEventListener('keydown', e=>{
 # ================= ADMIN LOGIN =================
 ADMIN_LOGIN_PAGE = """<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZEXXY // ADMIN ROOT</title>
+<title>MEDUSA // ADMIN ROOT</title>
 """ + BASE_CSS + """
 </head><body>
 <div class="wrap" style="max-width:460px; margin-top:10vh;">
@@ -478,7 +508,7 @@ document.getElementById('pw').addEventListener('keydown', e=>{
 # ================= ADMIN PANEL =================
 ADMIN_PANEL = """<!DOCTYPE html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ZEXXY // ROOT CONTROL</title>
+<title>MEDUSA // ROOT CONTROL</title>
 """ + BASE_CSS + """
 </head><body>
 <div class="wrap">
